@@ -1,0 +1,55 @@
+﻿@page "/product/{id:int}"
+@inject IServiceProvider ServiceProvider
+@rendermode InteractiveWebAssembly
+
+<h3>Product Details</h3>
+
+@if (product is not null)
+{
+    <div class="media">
+        <div class="media-img-wrapper mr-2">
+            <img class="media-img"  src="@product.ImageUrl" alt="@product.Title"/>
+        </div>
+        <div class="media-body">
+            <h2 class="mb-o">@product.Title</h2>
+            <p>@product.Description</p>
+            <h4 class="price">
+                $@product.Price
+            </h4>
+        </div>
+    </div>
+}
+else
+{
+    <p>Loading product...</p>
+}
+
+@code {
+    private IProductService? _productService;
+    private Product? product = null;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && OperatingSystem.IsBrowser())
+        {
+            _productService = ServiceProvider.GetRequiredService<IProductService>();
+
+            // Check if products are already loaded
+            if (_productService.Products is null || !_productService.Products.Any())
+            {
+                await _productService.GetProduct(Id);
+                product = _productService.Product;
+            }
+            else
+            {
+                product = _productService.Products.FirstOrDefault(p => p.Id == Id);
+            }
+
+   
+            StateHasChanged();
+        }
+    }
+}
